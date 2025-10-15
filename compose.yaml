@@ -8,12 +8,11 @@
 # database or a cache. For examples, see the Awesome Compose repository:
 # https://github.com/docker/awesome-compose
 services:
-  server:
+  guestbook:
     build:
       context: .
       target: final
     image: kalynux/guestbook:prod
-    container_name: guestbook
     labels:
       # ensure Dokploy always rebuilds instead of using stale images
       - "dokploy.rebuild=true"
