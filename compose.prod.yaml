@@ -13,10 +13,12 @@ services:
     command:
       - "--providers.docker"
       - "--providers.docker.exposedbydefault=false"
+      # setting up https request
       - "--entryPoints.websecure.address=:443"
       - "--certificatesresolvers.myresolver.acme.tlschallenge=true"
-      - "--certificatesresolvers.myresolver.acme.email=ulrichdilane@gmail.com"
+      - "--certificatesresolvers.myresolver.acme.email=ulrichdilane770@gmail.com"
       - "--certificatesresolvers.myresolver.acme.storage=/letsencrypt/acme.json"
+      # setup http (port 80) redirect to https (port 443)
       - "--entrypoints.web.address=:80"
       - "--entrypoints.web.http.redirections.entrypoint.to=websecure"
       - "--entrypoints.web.http.redirections.entrypoint.scheme=https"
@@ -24,10 +26,15 @@ services:
       - "80:80"
       - "443:443"
     volumes:
+      # store the letencrypt certificated after it is generated
       - letsencrypt:/letsencrypt
+      # make the traekif instance to listen to docker events
       - /var/run/docker.sock:/var/run/docker.sock
   guestbook:
-    image: ghcr.io/dreamsofcode-io/guestbook:prod
+    image: kalynux/guestbook:prod
+    build:
+      context: .
+      target: final
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.guestbook.rule=Host(`fante.cloud`)"
@@ -43,6 +50,7 @@ services:
       - POSTGRES_DB=guestbook
       - POSTGRES_PORT=5432
       - POSTGRES_SSLMODE=disable
+    # You can add more replicas and traekif service will manage load balancing
     deploy:
       mode: replicated
       replicas: 3
@@ -73,4 +81,4 @@ volumes:
   letsencrypt:
 secrets:
   db-password:
-    file: guestbook/db/password.txt
+    file: db/password.txt
