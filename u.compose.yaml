@@ -58,7 +58,8 @@ services:
       - "traefik.http.routers.pgadmin.rule=Host(`pgadmin.fante.cloud`)"
       - "traefik.http.routers.pgadmin.entrypoints=websecure"
       - "traefik.http.routers.pgadmin.tls.certresolver=letsencrypt"
-      - "traefik.http.routers.pgadmin.middlewares=tailscale-only"
+      - "traefik.http.routers.pgadmin.middlewares=pgadmin-whitelist"
+      - "traefik.http.middlewares.pgadmin-whitelist.ipwhitelist.sourcerange=100.64.0.0/10, fd7a:115c:a1e0::/48"
     depends_on:
       db:
         condition: service_healthy
