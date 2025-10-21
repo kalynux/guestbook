@@ -1,12 +1,3 @@
-# Comments are provided throughout this file to help you get started.
-# If you need more help, visit the Docker Compose reference guide at
-# https://docs.docker.com/go/compose-spec-reference/
-
-# Here the instructions define your application as a service called "guestbook".
-# This service is built from the Dockerfile in the current directory.
-# You can add other services your application may depend on here, such as a
-# database or a cache. For examples, see the Awesome Compose repository:
-# https://github.com/docker/awesome-compose
 services:
   guestbook:
     build:
@@ -14,10 +5,11 @@ services:
       target: final
     image: kalynux/guestbook:prod
     labels:
-      # ensure Dokploy always rebuilds instead of using stale images
       - "dokploy.rebuild=true"
       - "traefik.enable=true"
       - "traefik.http.routers.guestbook.rule=Host(`gbook.fante.cloud`)"
+      - "traefik.http.routers.guestbook.entrypoints=websecure"
+      - "traefik.http.routers.guestbook.tls.certresolver=letsencrypt"
     environment:
       - POSTGRES_HOST=db
       - POSTGRES_PASSWORD=mytest_postgress_password
@@ -33,14 +25,9 @@ services:
       db:
         condition: service_healthy
     networks:
+      - dokploy-network
       - guestbook-net
 
-# The commented out section below is an example of how to define a PostgreSQL
-# database that your application can use. `depends_on` tells Docker Compose to
-# start the database before your application. The `db-data` volume persists the
-# database data between container restarts. The `db-password` secret is used
-# to set the database password. You must create `db/password.txt` and add
-# a password of your choosing to it before running `docker compose up`.
   db:
     image: postgres
     restart: always
@@ -59,10 +46,32 @@ services:
       retries: 5
     networks:
       - guestbook-net
-      
+
+  pgadmin:
+    image: dpage/pgadmin4
+    restart: always
+    environment:
+      - PGADMIN_DEFAULT_EMAIL=admin@fante.cloud
+      - PGADMIN_DEFAULT_PASSWORD=pgadmin_password
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.pgadmin.rule=Host(`pgadmin.fante.cloud`)"
+      - "traefik.http.routers.pgadmin.entrypoints=websecure"
+      - "traefik.http.routers.pgadmin.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.pgadmin.middlewares=tailscale-only"
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - dokploy-network
+      - guestbook-net
+
 volumes:
   db-data:
 
 networks:
   guestbook-net:
     driver: bridge
+  dokploy-network:
+    external: true
+    name: dokploy-network
